@@ -129,6 +129,8 @@ export async function upload({ pathFormat, stream, prefix, bucket, file, acl, pa
         contentType = 'application/octet-stream';
     }
 
+    console.log("pathFormat", pathFormat)
+
     const key = parsePathFormatSyntax(pathFormat || '$(prefix)/$(file)', { prefix, file });
     core.startGroup(`Uploading object [${file}: ${key}] | Content-Type: ${contentType}`);
 

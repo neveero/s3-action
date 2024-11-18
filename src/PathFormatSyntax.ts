@@ -108,21 +108,26 @@ export const MATCHERS: Matchers = {
  */
 export const parsePathFormatSyntax = (syntax: string, { prefix, file }: Record<'file' | 'prefix', string>) => {
     const result = syntax.replace(/[$]\(([\w\.]+)\)/g, (_, key) => {
-        const matcher = MATCHERS[key] as (() => string) | boolean;
-        if (!matcher) return key;
+        try {
+            const matcher = MATCHERS[key] as (() => string) | boolean;
+            if (!matcher) return key;
 
-        if (typeof matcher === 'boolean' && matcher === true) {
-            switch (key) {
-                case 'prefix':
-                    return prefix;
-                case 'file':
-                    return file;
-                default:
-                    throw new TypeError(`Unknown matcher [${key}]`);
+            if (typeof matcher === 'boolean' && matcher === true) {
+                switch (key) {
+                    case 'prefix':
+                        return prefix;
+                    case 'file':
+                        return file;
+                    default:
+                        throw new TypeError(`Unknown matcher [${key}]`);
+                }
+            } else {
+                return matcher();
             }
-        } else {
-            return matcher();
+        } catch (error) {
+            console.log("parse error", error.toString());
         }
+
     });
 
     if (result[0] === prefix && result[1] === prefix) {
