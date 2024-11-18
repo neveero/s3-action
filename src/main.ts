@@ -37,7 +37,7 @@ async function main() {
     const config = await inferOptions();
     await init(config);
 
-    core.info("post-init")
+    info("post-init")
 
     try {
 
@@ -98,7 +98,7 @@ async function main() {
         }
     } catch (error) {
         // @ts-ignore
-        core.info("post-init-error"+error.toString());
+        info("post-init-error"+error.toString());
     }
 }
 
