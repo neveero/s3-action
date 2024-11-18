@@ -23,6 +23,7 @@
 
 import { execSync } from 'child_process';
 import { warning } from '@actions/core';
+import * as core from '@actions/core';
 
 /**
  * Represents the list of matchers that are available.
@@ -125,7 +126,8 @@ export const parsePathFormatSyntax = (syntax: string, { prefix, file }: Record<'
                 return matcher();
             }
         } catch (error) {
-            console.log("parse error", error.toString());
+            // @ts-ignore
+            core.info("parse error"+error.toString());
         }
 
     });

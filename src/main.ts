@@ -31,65 +31,74 @@ import { inferOptions } from './config';
 import { basename } from 'node:path';
 import { readdir } from 'node:fs/promises';
 import { lstat } from 'node:fs/promises';
+import * as core from '@actions/core';
 
 async function main() {
     const config = await inferOptions();
     await init(config);
 
-    const excludedPatterns = await createGlobPattern(config.exclude.join('\n'), {
-        followSymbolicLinks: config.followSymlinks
-    });
+    core.info("post-init")
 
-    const excluded: string[] = [];
+    try {
 
-    info(`Excluding ${config.exclude.length} files/directories...`);
-    for await (const file of excludedPatterns.globGenerator()) excluded.push(file);
+        const excludedPatterns = await createGlobPattern(config.exclude.join('\n'), {
+            followSymbolicLinks: config.followSymlinks
+        });
 
-    for (const dir of config.directories) {
-        info(`--> Uploading directory ${dir} (excluded: ${excluded.includes(dir)})`);
-        if (excluded.includes(dir)) continue;
+        const excluded: string[] = [];
 
-        const globber = await createGlobPattern(dir, { followSymbolicLinks: config.followSymlinks });
-        for await (const d of globber.globGenerator()) {
-            const stats = await lstat(d);
-            if (!stats.isDirectory()) {
-                warning(`Path ${d} is not a directory, skipping!`);
-                continue;
-            }
+        info(`Excluding ${config.exclude.length} files/directories...`);
+        for await (const file of excludedPatterns.globGenerator()) excluded.push(file);
 
-            const files = await readdir(d).then((files) => files.map((s) => join(d, s)));
-            for (const file of files) {
-                debug(`Uploading file ${file} (from directory ${d})`);
-                if (excluded.includes(file)) continue;
+        for (const dir of config.directories) {
+            info(`--> Uploading directory ${dir} (excluded: ${excluded.includes(dir)})`);
+            if (excluded.includes(dir)) continue;
 
-                await upload({
-                    pathFormat: config.pathFormat,
-                    partSize: config.partSize,
-                    prefix: config.prefix,
-                    bucket: config.bucket,
-                    stream: createReadStream(file),
-                    file: basename(file),
-                    acl: config.objectAcl
-                });
+            const globber = await createGlobPattern(dir, { followSymbolicLinks: config.followSymlinks });
+            for await (const d of globber.globGenerator()) {
+                const stats = await lstat(d);
+                if (!stats.isDirectory()) {
+                    warning(`Path ${d} is not a directory, skipping!`);
+                    continue;
+                }
+
+                const files = await readdir(d).then((files) => files.map((s) => join(d, s)));
+                for (const file of files) {
+                    debug(`Uploading file ${file} (from directory ${d})`);
+                    if (excluded.includes(file)) continue;
+
+                    await upload({
+                        pathFormat: config.pathFormat,
+                        partSize: config.partSize,
+                        prefix: config.prefix,
+                        bucket: config.bucket,
+                        stream: createReadStream(file),
+                        file: basename(file),
+                        acl: config.objectAcl
+                    });
+                }
             }
         }
-    }
 
-    for (const file of config.files) {
-        const path = resolve(process.cwd(), file);
+        for (const file of config.files) {
+            const path = resolve(process.cwd(), file);
 
-        info(`--> Uploading file ${file} (excluded: ${excluded.includes(path)})`);
-        if (excluded.includes(path)) continue;
+            info(`--> Uploading file ${file} (excluded: ${excluded.includes(path)})`);
+            if (excluded.includes(path)) continue;
 
-        await upload({
-            pathFormat: config.pathFormat,
-            partSize: config.partSize,
-            prefix: config.prefix,
-            bucket: config.bucket,
-            stream: createReadStream(path),
-            file,
-            acl: config.objectAcl
-        });
+            await upload({
+                pathFormat: config.pathFormat,
+                partSize: config.partSize,
+                prefix: config.prefix,
+                bucket: config.bucket,
+                stream: createReadStream(path),
+                file,
+                acl: config.objectAcl
+            });
+        }
+    } catch (error) {
+        // @ts-ignore
+        core.info("post-init-error"+error.toString());
     }
 }
 

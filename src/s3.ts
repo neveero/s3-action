@@ -109,6 +109,7 @@ export async function init({
         core.info(`Bucket [${bucket}] doesn't exist`);
         await s3Client.send(new CreateBucketCommand({ Bucket: bucket, ACL: fromBucketCannedAcl(bucketAcl) }));
     } else if (resp.$metadata.httpStatusCode === 200) {
+        core.info("do nothing")
         /* do nothing */
     } else {
         throw new Error(
@@ -129,7 +130,7 @@ export async function upload({ pathFormat, stream, prefix, bucket, file, acl, pa
         contentType = 'application/octet-stream';
     }
 
-    console.log("pathFormat", pathFormat)
+    core.info("pathFormat"+pathFormat)
 
     const key = parsePathFormatSyntax(pathFormat || '$(prefix)/$(file)', { prefix, file });
     core.startGroup(`Uploading object [${file}: ${key}] | Content-Type: ${contentType}`);

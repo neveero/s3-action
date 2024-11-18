@@ -64,33 +64,29 @@ export async function main() {
         } else {
             for (const result of results) {
                 for (const msg of result.messages) {
-                    switch (msg.severity) {
-                        case 0:
-                            continue;
-
-                        case 1:
-                            log.warn(
-                                `[${msg.ruleId || '(unknown rule)'}] ${msg.message} (line ${msg.line}:${msg.column})`
-                            );
-                            continue;
-
-                        case 2:
-                            hasFailed = true;
-                            log.error(
-                                `${
-                                    colors.isColorSupported ? colors.bold(colors.red('FAILED')) : 'FAILED'
-                                } file [${file}] has failed to lint properly; run \`bun run lint\` outside of CI to fix it: ${
-                                    msg.ruleId || '(unknown rule)'
-                                }: ${msg.message}`,
-                                {
-                                    startColumn: msg.endColumn,
-                                    endColumn: msg.endColumn,
-                                    startLine: msg.line,
-                                    endLine: msg.endLine,
-                                    title: `[${msg.ruleId || '(unknown)'}] ${msg.message}`,
-                                    file: file
-                                }
-                            );
+                    // @ts-ignore
+                    if (msg.severity === 0) {
+                        continue;
+                    } else if (msg.severity === 1) {
+                        log.warn(`[${msg.ruleId || '(unknown rule)'}] ${msg.message} (line ${msg.line}:${msg.column})`);
+                        continue;
+                    } else if (msg.severity === 2) {
+                        hasFailed = true;
+                        log.error(
+                            `${
+                                colors.isColorSupported ? colors.bold(colors.red('FAILED')) : 'FAILED'
+                            } file [${file}] has failed to lint properly; run \`bun run lint\` outside of CI to fix it: ${
+                                msg.ruleId || '(unknown rule)'
+                            }: ${msg.message}`,
+                            {
+                                startColumn: msg.endColumn,
+                                endColumn: msg.endColumn,
+                                startLine: msg.line,
+                                endLine: msg.endLine,
+                                title: `[${msg.ruleId || '(unknown)'}] ${msg.message}`,
+                                file: file
+                            }
+                        );
                     }
                 }
             }
